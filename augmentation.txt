@@ -1,0 +1,137 @@
+# 🩸 BCCD Dataset Classification with CNN + Augmentation
+import tensorflow as tf
+import tensorflow_datasets as tfds
+from tensorflow.keras import layers, models
+import matplotlib.pyplot as plt
+
+# -----------------------------
+# 1️⃣ Load BCCD dataset
+dataset = tfds.load('bccd', split=['train', 'test'], as_supervised=False)
+train_dataset, test_dataset = dataset
+
+# -----------------------------
+# 2️⃣ Count number of images
+print("Number of training images:", len(list(train_dataset)))
+print("Number of testing images:", len(list(test_dataset)))
+
+# -----------------------------
+# 3️⃣ Plot some images
+def plot_images_bccd(dataset, num_images=5):
+    plt.figure(figsize=(15, 5))
+    for i, example in enumerate(dataset.take(num_images)):
+        ax = plt.subplot(1, num_images, i + 1)
+        image = example['image'].numpy()
+        plt.imshow(image)
+        plt.axis('off')
+
+        # Get object class names if available
+        objects = example.get('objects')
+        if objects:
+            class_ids = objects['label'].numpy()
+            plt.title(f"Classes: {class_ids}")
+        else:
+            plt.title("Image")
+    plt.show()
+
+plot_images_bccd(train_dataset)
+
+# -----------------------------
+# 4️⃣ Preprocess dataset for classification
+def extract_first_label(example):
+    # Take first object label as the image label
+    label = example['objects']['label'][0]
+    return example['image'], label
+
+AUTOTUNE = tf.data.AUTOTUNE
+
+train_dataset_cls = train_dataset.map(extract_first_label).cache().shuffle(100).batch(32).prefetch(AUTOTUNE)
+test_dataset_cls = test_dataset.map(extract_first_label).batch(32).prefetch(AUTOTUNE)
+
+# -----------------------------
+# 5️⃣ Data Augmentation
+data_augmentation = tf.keras.Sequential([
+    layers.RandomFlip('horizontal'),
+    layers.RandomRotation(0.2),
+    layers.RandomContrast(0.2)
+])
+
+# Apply augmentation only on training dataset
+train_dataset_aug = train_dataset_cls.map(lambda x, y: (data_augmentation(x), y))
+
+# -----------------------------
+# 6️⃣ Normalize images
+def normalize_images(x, y):
+    x = tf.cast(x, tf.float32) / 255.0
+    return x, y
+
+train_dataset_cls = train_dataset_cls.map(normalize_images)
+train_dataset_aug = train_dataset_aug.map(normalize_images)
+test_dataset_cls = test_dataset_cls.map(normalize_images)
+
+# -----------------------------
+# 7️⃣ Build CNN Model
+def create_cnn_model():
+    model = models.Sequential([
+        layers.Input(shape=(None, None, 3)),
+        layers.Resizing(128, 128),  # Resize all images
+        layers.Conv2D(32, (3,3), activation='relu'),
+        layers.MaxPooling2D(2,2),
+        layers.Conv2D(64, (3,3), activation='relu'),
+        layers.MaxPooling2D(2,2),
+        layers.Conv2D(128, (3,3), activation='relu'),
+        layers.MaxPooling2D(2,2),
+        layers.Flatten(),
+        layers.Dense(128, activation='relu'),
+        layers.Dense(3, activation='softmax')  # 3 classes: RBC, WBC, Platelets
+    ])
+    model.compile(optimizer='adam',
+                  loss='sparse_categorical_crossentropy',
+                  metrics=['accuracy'])
+    return model
+
+# -----------------------------
+# 8️⃣ Train model without augmentation
+model = create_cnn_model()
+history = model.fit(train_dataset_cls, validation_data=test_dataset_cls, epochs=10)
+acc_no_aug = history.history['accuracy'][-1]
+val_acc_no_aug = history.history['val_accuracy'][-1]
+
+# -----------------------------
+# 9️⃣ Train model with augmentation
+model_aug = create_cnn_model()
+history_aug = model_aug.fit(train_dataset_aug, validation_data=test_dataset_cls, epochs=10)
+acc_aug = history_aug.history['accuracy'][-1]
+val_acc_aug = history_aug.history['val_accuracy'][-1]
+
+# -----------------------------
+# 10️⃣ Compare Accuracy
+print(f"Without augmentation - Train Accuracy: {acc_no_aug:.4f}, Test Accuracy: {val_acc_no_aug:.4f}")
+print(f"With augmentation    - Train Accuracy: {acc_aug:.4f}, Test Accuracy: {val_acc_aug:.4f}")
+
+# -----------------------------
+# 11️⃣ Plot Training Curves
+plt.figure(figsize=(12,5))
+
+# Accuracy
+plt.subplot(1,2,1)
+plt.plot(history.history['accuracy'], label='Train No Aug')
+plt.plot(history.history['val_accuracy'], label='Test No Aug')
+plt.plot(history_aug.history['accuracy'], label='Train Aug')
+plt.plot(history_aug.history['val_accuracy'], label='Test Aug')
+plt.title("Accuracy")
+plt.xlabel("Epochs")
+plt.ylabel("Accuracy")
+plt.legend()
+
+# Loss
+plt.subplot(1,2,2)
+plt.plot(history.history['loss'], label='Train No Aug')
+plt.plot(history.history['val_loss'], label='Test No Aug')
+plt.plot(history_aug.history['loss'], label='Train Aug')
+plt.plot(history_aug.history['val_loss'], label='Test Aug')
+plt.title("Loss")
+plt.xlabel("Epochs")
+plt.ylabel("Loss")
+plt.legend()
+
+plt.show()
