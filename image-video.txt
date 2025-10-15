@@ -1,0 +1,31 @@
+import imageio
+import os
+import matplotlib.pyplot as plt
+
+video_path = '/content/WIN_20250207_19_02_36_Pro.mp4'  # full path to your video
+output_folder = 'extracted_frames'
+os.makedirs(output_folder, exist_ok=True)
+
+# Read video frame by frame
+reader = imageio.get_reader(video_path)
+saved_count = 0
+
+for i, frame in enumerate(reader):
+    # Save every 5th frame (adjust as needed)
+    if i % 5 == 0:
+        plt.imsave(os.path.join(output_folder, f'frame_{saved_count:03d}.png'), frame)
+        saved_count += 1
+
+reader.close()
+print(f"✅ Extracted {saved_count} frames and saved to '{output_folder}'")
+
+# Plot first 5 frames
+frame_files = sorted(os.listdir(output_folder))[:5]
+plt.figure(figsize=(12,4))
+for idx, file in enumerate(frame_files):
+    img = plt.imread(os.path.join(output_folder, file))
+    plt.subplot(1,5,idx+1)
+    plt.imshow(img)
+    plt.axis('off')
+    plt.title(f"Frame {idx+1}")
+plt.show()

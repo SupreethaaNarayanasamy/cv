@@ -1,0 +1,26 @@
+import cv2
+import matplotlib.pyplot as plt
+
+# 1️⃣ Load image (using CIFAR-10 image from TensorFlow)
+from tensorflow.keras.datasets import cifar10
+(train_images, _), (_, _) = cifar10.load_data()
+img = train_images[0]
+gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+
+# 2️⃣ Create SIFT object
+sift = cv2.SIFT_create()
+
+# 3️⃣ Detect keypoints and compute descriptors
+keypoints, descriptors = sift.detectAndCompute(gray, None)
+
+# 4️⃣ Draw keypoints
+img_kp = cv2.drawKeypoints(gray, keypoints, None, flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+
+# 5️⃣ Display results
+plt.figure(figsize=(8,6))
+plt.imshow(img_kp, cmap='gray')
+plt.title(f"SIFT Keypoints (Total: {len(keypoints)})")
+plt.axis('off')
+plt.show()
+
+print("Descriptor shape:", descriptors.shape)  # e.g., (num_keypoints, 128)

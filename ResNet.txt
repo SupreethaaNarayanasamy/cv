@@ -1,0 +1,63 @@
+import tensorflow as tf
+import tensorflow_datasets as tfds
+from tensorflow.keras import layers, models
+import matplotlib.pyplot as plt
+
+# 1️⃣ Load dataset
+dataset, info = tfds.load('horses_or_humans', with_info=True, as_supervised=True)
+train_ds = dataset['train']
+test_ds = dataset['test']
+
+# 2️⃣ View number of training and testing images
+num_train = info.splits['train'].num_examples
+num_test = info.splits['test'].num_examples
+print(f"Number of training images: {num_train}")
+print(f"Number of testing images: {num_test}")
+
+# 3️⃣ Plot some sample images
+plt.figure(figsize=(8,8))
+for i, (image, label) in enumerate(train_ds.take(9)):
+    plt.subplot(3,3,i+1)
+    plt.imshow(image)
+    plt.title("Horse" if label == 0 else "Human")
+    plt.axis("off")
+plt.suptitle("Sample Horse & Human Images")
+plt.show()
+
+# 2️⃣ Normalize and batch (smaller batch)
+def normalize_img(image, label):
+    image = tf.cast(image, tf.float32) / 255.0
+    return image, label
+
+train_ds = train_ds.map(normalize_img).batch(16).prefetch(tf.data.AUTOTUNE)  # batch 16 instead of 32
+test_ds = test_ds.map(normalize_img).batch(16).prefetch(tf.data.AUTOTUNE)
+
+# 3️⃣ Build CNN model (ResNet50)
+base_model = tf.keras.applications.ResNet50(
+    include_top=False,
+    input_shape=(128, 128, 3),
+    weights='imagenet'
+)
+base_model.trainable = False
+
+model = models.Sequential([
+    layers.Resizing(128, 128),
+    base_model,
+    layers.GlobalAveragePooling2D(),
+    layers.Dense(1, activation='sigmoid')
+])
+
+model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+
+# 4️⃣ Train (fewer epochs)
+history = model.fit(train_ds, validation_data=test_ds, epochs=2)  # epochs 2 instead of 5
+
+# 5️⃣ Plot accuracy
+plt.figure(figsize=(8,5))
+plt.plot(history.history['accuracy'], label='Training Accuracy')
+plt.plot(history.history['val_accuracy'], label='Validation Accuracy')
+plt.title('Training vs Validation Accuracy')
+plt.xlabel('Epochs')
+plt.ylabel('Accuracy')
+plt.legend()
+plt.show()

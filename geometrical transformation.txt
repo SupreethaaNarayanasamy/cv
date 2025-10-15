@@ -1,0 +1,52 @@
+import tensorflow as tf
+import matplotlib.pyplot as plt
+import cv2
+import numpy as np
+from tensorflow.keras.datasets import cifar10
+
+# 1️⃣ Load an image from TensorFlow dataset
+(train_images, _), (_, _) = cifar10.load_data()
+img = train_images[0]  # pick the first image
+img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)  # convert to BGR for OpenCV
+
+# 2️⃣ Scaling (resize)
+scaled_img = cv2.resize(img, (128, 128))  # scale to 128x128
+
+# 3️⃣ Rotation
+(h, w) = img.shape[:2]
+center = (w // 2, h // 2)
+angle = 45  # rotate 45 degrees
+scale = 1.0
+M_rot = cv2.getRotationMatrix2D(center, angle, scale)
+rotated_img = cv2.warpAffine(img, M_rot, (w, h))
+
+# 4️⃣ Shearing
+# shear in x-direction
+M_shear = np.array([[1, 0.3, 0],
+                    [0, 1, 0]], dtype=float)  # shear factor = 0.3
+sheared_img = cv2.warpAffine(img, M_shear, (w, h))
+
+# 5️⃣ Plot all images
+plt.figure(figsize=(12,6))
+
+plt.subplot(1,4,1)
+plt.title("Original Image")
+plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+plt.axis("off")
+
+plt.subplot(1,4,2)
+plt.title("Scaled Image")
+plt.imshow(cv2.cvtColor(scaled_img, cv2.COLOR_BGR2RGB))
+plt.axis("off")
+
+plt.subplot(1,4,3)
+plt.title("Rotated Image")
+plt.imshow(cv2.cvtColor(rotated_img, cv2.COLOR_BGR2RGB))
+plt.axis("off")
+
+plt.subplot(1,4,4)
+plt.title("Sheared Image")
+plt.imshow(cv2.cvtColor(sheared_img, cv2.COLOR_BGR2RGB))
+plt.axis("off")
+
+plt.show()

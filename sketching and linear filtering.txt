@@ -1,0 +1,50 @@
+import tensorflow as tf
+import cv2
+import numpy as np
+from matplotlib import pyplot as plt
+
+# 1️⃣ Load image from TensorFlow dataset
+(train_images, _), (_, _) = tf.keras.datasets.cifar10.load_data()
+img = train_images[0]   # take one image
+gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+
+# 2️⃣ Contrast Stretching
+# Formula: s = (r - min) * (255 / (max - min))
+min_val = np.min(gray)
+max_val = np.max(gray)
+contrast_stretched = ((gray - min_val) * (255 / (max_val - min_val))).astype(np.uint8)
+
+# 3️⃣ Linear Filtering (using an averaging kernel)
+kernel = np.ones((5,5), np.float32) / 25
+linear_filtered = cv2.filter2D(contrast_stretched, -1, kernel)
+
+# 4️⃣ Plot all images and histograms
+plt.figure(figsize=(12,8))
+
+plt.subplot(2,3,1)
+plt.title("Original Image")
+plt.imshow(gray, cmap='gray')
+
+plt.subplot(2,3,2)
+plt.title("Contrast Stretched")
+plt.imshow(contrast_stretched, cmap='gray')
+
+plt.subplot(2,3,3)
+plt.title("Linear Filtered")
+plt.imshow(linear_filtered, cmap='gray')
+
+# Histograms
+plt.subplot(2,3,4)
+plt.title("Original Histogram")
+plt.hist(gray.ravel(), 256, [0,256])
+
+plt.subplot(2,3,5)
+plt.title("Contrast Stretched Histogram")
+plt.hist(contrast_stretched.ravel(), 256, [0,256])
+
+plt.subplot(2,3,6)
+plt.title("Filtered Histogram")
+plt.hist(linear_filtered.ravel(), 256, [0,256])
+
+plt.tight_layout()
+plt.show()
