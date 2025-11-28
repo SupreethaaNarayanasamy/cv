@@ -7,7 +7,7 @@ Original file is located at
     https://colab.research.google.com/drive/1NLJAFV5Pc4Fah_JburSHVaq5u8u1K3kr
 """
 
-#EX - 1.1
+#EX - 1.1 (pixel wise difference)
 !pip install opencv-python
 
 import cv2
@@ -46,7 +46,7 @@ cv2.destroyAllWindows()
 
 cv2.imwrite(diff_img,diff)
 
-#EX 1.2
+#EX 1.2 (feature extraction using HOG)
 !pip install scikit-image
 
 import cv2
@@ -107,7 +107,7 @@ plt.axis("off")
 
 print("Number of features extracted:",len(features))
 
-#Ex2.1
+#Ex2.1 (contrast stretching and linear filtering and plot its histogram)
 
 import cv2
 import numpy as np
@@ -147,7 +147,7 @@ plt.title("Histogram of filtered")
 plt.hist(filtered_img.ravel(),bins=256)
 plt.show()
 
-#EX 2.2
+#EX 2.2 ( Horse and Human dataset)
 # Install required packages
 !pip install tensorflow tensorflow-datasets matplotlib
 
@@ -211,7 +211,7 @@ plt.title('Training vs Validation Accuracy')
 plt.legend()
 plt.show()
 
-'''Ex 3.1'''
+'''Ex 3.1(geometrical transformations (scaling, rotation and shearing))'''
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
@@ -251,7 +251,7 @@ plt.title('Sheared'); plt.axis('off')
 
 plt.show()
 
-'''Ex-3.2'''
+'''Ex-3.2( feature extraction techniques using SIFT )'''
 import cv2
 import matplotlib.pyplot as plt
 
@@ -283,7 +283,7 @@ for kp in keypoints[:5]:
 print("Number of keypoints detected:", len(keypoints))
 print("Descriptor shape:", descriptors.shape)
 
-'''Ex-4'''
+'''Ex-4(Extract images from the video)'''
 import cv2
 import os
 
@@ -313,7 +313,7 @@ while True:
 cap.release()
 print(f'Extracted {count} frames to the folder: "{output_folder}"')
 
-'''Ex-5'''
+'''Ex-5(MS-COCO)'''
 import tensorflow as tf
 import tensorflow_datasets as tfds
 from tensorflow.keras import layers, models
@@ -389,7 +389,7 @@ plt.title('Training Accuracy Comparison')
 plt.legend()
 plt.show()
 
-#EX 5 (Workaround)
+#EX 5 (Workaround) MS-COCO
 import tensorflow as tf
 from tensorflow.keras import layers, models
 import matplotlib.pyplot as plt
